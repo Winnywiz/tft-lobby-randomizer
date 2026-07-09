@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lobby Randomizer</title>
+<style>
+  :root{
+    --bg:#eef1f6; --card:#ffffff; --line:#e6e9ef; --line2:#eef1f6;
+    --text:#1c2230; --muted:#8a93a6; --soft:#f4f6f9;
+    --accent:#4f46e5; --accent-d:#4338ca; --accent-soft:#eef0fe;
+    --gain:#15925a; --gain-bg:#e6f5ee; --gain-line:#b7e2cc;
+    --lose:#d1435b; --lose-bg:#fceaed; --lose-line:#f2c2cb;
+    --shadow:0 1px 2px rgba(16,24,40,.05),0 4px 16px rgba(16,24,40,.05);
+    --radius:16px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; font-family:-apple-system,"Segoe UI",Inter,system-ui,sans-serif;
+    background:var(--bg); color:var(--text); min-height:100vh; padding:28px 24px;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1120px; margin:0 auto;}
+  .head{margin:0 0 22px;}
+  .head h1{font-size:22px; font-weight:700; margin:0; letter-spacing:-.3px;}
+  .head p{margin:4px 0 0; color:var(--muted); font-size:14px;}
+
+  .layout{display:grid; grid-template-columns:1.05fr 1fr; grid-template-rows:auto auto; gap:20px; align-items:start;}
+  .card{
+    background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+    padding:22px; box-shadow:var(--shadow);
+  }
+  .standings{
+    grid-column:1; grid-row:1 / span 2;
+    position:sticky; top:20px; align-self:start;
+    max-height:calc(100vh - 40px); display:flex; flex-direction:column; overflow:hidden;
+  }
+  .randomizer{grid-column:2; grid-row:1;}
+  .teams{grid-column:2; grid-row:2;}
+
+  .card-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; gap:12px;}
+  .card-head h2{font-size:15px; font-weight:650; margin:0; display:flex; align-items:center; gap:9px;}
+  .step{width:22px; height:22px; border-radius:7px; background:var(--accent-soft); color:var(--accent);
+    font-size:12px; font-weight:700; display:grid; place-items:center;}
+
+  button{font-family:inherit; cursor:pointer; border:1px solid transparent; border-radius:10px;
+    font-size:14px; font-weight:600; transition:all .13s; padding:10px 16px;}
+  button:active{transform:translateY(1px);}
+  button:disabled{opacity:.45; cursor:not-allowed;}
+  .btn-primary{background:var(--accent); color:#fff;}
+  .btn-primary:hover:not(:disabled){background:var(--accent-d);}
+  .btn-ghost{background:#fff; color:var(--text); border-color:var(--line);}
+  .btn-ghost:hover{background:var(--soft);}
+  .btn-sm{padding:7px 13px; font-size:13px;}
+  .btn-block{width:100%;}
+
+  /* import */
+  .import-panel{display:none; margin-bottom:16px; background:var(--soft); border:1px solid var(--line);
+    border-radius:12px; padding:14px;}
+  .import-panel.show{display:block;}
+  .import-panel textarea{width:100%; height:110px; resize:vertical; border:1px solid var(--line);
+    border-radius:9px; padding:11px; font-size:13px; font-family:ui-monospace,Menlo,Consolas,monospace;
+    color:var(--text); background:#fff; outline:none;}
+  .import-panel textarea:focus{border-color:var(--accent);}
+  .import-hint{font-size:12px; color:var(--muted); margin:0 0 9px;}
+  .import-actions{display:flex; gap:8px; margin-top:10px; flex-wrap:wrap;}
+
+  /* standings scroll area */
+  .stand-scroll{flex:1; overflow-y:auto; margin:0 -6px;}
+  table{width:100%; border-collapse:collapse; font-size:14px;}
+  thead th{position:sticky; top:0; background:var(--card); z-index:2;}
+  th{text-align:left; padding:9px 6px; color:var(--muted); font-size:10.5px; font-weight:600;
+    text-transform:uppercase; letter-spacing:.5px; border-bottom:1px solid var(--line);}
+  td{padding:10px 6px; border-bottom:1px solid var(--line2);}
+  tr:last-child td{border-bottom:none;}
+  td.rank{width:28px; color:var(--muted); font-variant-numeric:tabular-nums;}
+  tr.top td.rank{color:var(--accent); font-weight:700;}
+  td.nm{font-weight:550;}
+  th.r,td.sc,td.stat{text-align:right;}
+  td.sc{width:52px; font-weight:700; font-variant-numeric:tabular-nums; cursor:pointer;}
+  td.sc:hover{color:var(--accent);}
+  td.stat{width:48px; color:var(--muted); font-variant-numeric:tabular-nums;}
+  .pos{color:var(--gain);} .neg{color:var(--lose);} .zero{color:var(--muted);}
+  td.x{width:24px; text-align:right;}
+  .del{background:none; border:none; color:#c8cdd8; padding:2px 3px; font-size:17px; line-height:1; cursor:pointer;}
+  .del:hover{color:var(--lose);}
+  .empty-state{text-align:center; padding:40px 10px; color:var(--muted);}
+  .empty-state p{margin:0 0 4px; font-weight:600; color:var(--text);}
+  .empty-state span{font-size:13px;}
+
+  /* randomizer */
+  .slots{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+  .slot{position:relative;}
+  .slot .n{position:absolute; left:11px; top:50%; transform:translateY(-50%); color:#c3c9d4;
+    font-size:12px; font-weight:700; pointer-events:none;}
+  .slot input{width:100%; padding:11px 12px 11px 30px; border:1px solid var(--line); border-radius:10px;
+    font-size:14.5px; color:var(--text); background:#fff; outline:none; transition:border .13s;}
+  .slot input:focus{border-color:var(--accent);}
+  .slot input::placeholder{color:#b9c0cc;}
+  .rand-actions{display:flex; gap:10px; margin-top:16px;}
+  .msg{font-size:13px; margin-top:12px; min-height:16px; color:var(--lose);}
+  .msg.ok{color:var(--gain);}
+
+  /* teams */
+  .team-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+  .team{border:1px solid var(--line); border-radius:12px; padding:14px; background:#fff;
+    opacity:0; transform:translateY(8px); animation:rise .35s forwards;}
+  @keyframes rise{to{opacity:1; transform:none;}}
+  .team h3{margin:0 0 10px; font-size:12px; font-weight:600; color:var(--muted);
+    text-transform:uppercase; letter-spacing:.5px;}
+  .pair{display:flex; flex-direction:column; gap:10px; margin-bottom:12px;}
+  .pl{background:var(--soft); border-radius:8px; padding:9px 11px;}
+  .pl .pn{font-size:14.5px; font-weight:600;}
+  input.pn{width:100%; border:1px solid transparent; background:transparent; padding:2px 5px;
+    border-radius:6px; outline:none; font-family:inherit; color:var(--text); margin:-2px -5px;}
+  input.pn:hover{border-color:var(--line); background:#fff;}
+  input.pn:focus{border-color:var(--accent); background:#fff;}
+  .pl .ps{font-size:11.5px; color:var(--muted); margin-top:4px;}
+  .place-label{font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; margin:8px 0 5px;}
+  .pplace{display:grid; grid-template-columns:repeat(8,1fr); gap:4px;}
+  .pplace button{padding:6px 0; border:1px solid var(--line); background:#fff; color:var(--muted);
+    font-size:12px; font-weight:650; border-radius:6px;}
+  .pplace button:hover:not(.taken){border-color:#cfd5e0;}
+  .pplace button.on{background:var(--accent); color:#fff; border-color:var(--accent);}
+  .pplace button.taken{opacity:.32; cursor:not-allowed;}
+  .team-foot{margin-top:6px; padding-top:11px; border-top:1px solid var(--line);
+    display:flex; align-items:center; justify-content:space-between; gap:8px;}
+  .tp{font-size:12.5px; color:var(--muted);}
+  .tp b{color:var(--text); font-size:14px; font-variant-numeric:tabular-nums;}
+  .badge{font-size:12px; font-weight:700; padding:5px 11px; border-radius:8px; border:1px solid transparent; white-space:nowrap;}
+  .badge.gain{background:var(--gain-bg); color:var(--gain); border-color:var(--gain-line);}
+  .badge.lose{background:var(--lose-bg); color:var(--lose); border-color:var(--lose-line);}
+  .badge.wait{background:var(--soft); color:var(--muted);}
+  .scoring-note{font-size:11.5px; color:var(--muted); margin:0 0 14px; line-height:1.5;}
+  .teams-empty{text-align:center; padding:34px 10px; color:var(--muted); font-size:14px;}
+  .apply-row{display:flex; gap:10px; margin-top:16px;}
+  .copybox{display:none; margin-top:16px;}
+  .copybox.show{display:block;}
+  .copybox textarea{width:100%; height:120px; resize:vertical; border:1px solid var(--line);
+    border-radius:10px; padding:12px; font-size:13px; font-family:ui-monospace,Menlo,Consolas,monospace;
+    color:var(--text); background:var(--soft); outline:none;}
+  .copy-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;}
+  .copy-head span{font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.5px;}
+
+  @media(max-width:860px){
+    .layout{grid-template-columns:1fr;}
+    .standings,.randomizer,.teams{grid-column:1; grid-row:auto; position:static; max-height:none;}
+    .standings{order:3;}
+    .stand-scroll{max-height:60vh;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="head">
+    <h1>Lobby Randomizer</h1>
+  </div>
+
+  <div class="layout">
+
+    <!-- SECTION 1 -->
+    <div class="card standings">
+      <div class="card-head">
+        <h2><span class="step">1</span>Standings</h2>
+        <div style="display:flex; gap:8px;">
+          <button class="btn-ghost btn-sm" onclick="copyStandings(event)">Copy</button>
+          <button class="btn-ghost btn-sm" onclick="toggleImport()">Import</button>
+        </div>
+      </div>
+      <div class="import-panel" id="importPanel">
+        <textarea id="importText" placeholder="Aofnakup 0&#10;Aossy 0&#10;csnpysm 1"></textarea>
+        <div class="import-actions">
+          <button class="btn-primary btn-sm" onclick="doImport(true)">Replace standings</button>
+          <button class="btn-ghost btn-sm" onclick="doImport(false)">Add to standings</button>
+          <button class="btn-ghost btn-sm" onclick="toggleImport()">Cancel</button>
+        </div>
+      </div>
+      <div class="stand-scroll" id="standWrap"></div>
+    </div>
+
+    <!-- SECTION 2 -->
+    <div class="card randomizer">
+      <div class="card-head">
+        <h2><span class="step">2</span>Lobby randomizer</h2>
+        <button class="btn-ghost btn-sm" onclick="clearRound()">Clear</button>
+      </div>
+      <div class="slots" id="slots"></div>
+      <div class="rand-actions">
+        <button class="btn-primary btn-block" onclick="randomize()">Randomize duos</button>
+      </div>
+      <div class="msg" id="msg"></div>
+    </div>
+
+    <!-- SECTION 3 -->
+    <div class="card teams">
+      <div class="card-head"><h2><span class="step">3</span>Teams</h2></div>
+      <div id="teamHost"><div class="teams-empty">Randomize a lobby to generate 4 duos.</div></div>
+      <div class="apply-row" id="applyRow" style="display:none">
+        <button class="btn-primary btn-block" id="applyBtn" onclick="applyResults()">Apply to standings</button>
+      </div>
+      <div class="msg" id="msg2"></div>
+      <div class="copybox" id="copybox">
+        <div class="copy-head"><span>Copyable result</span>
+          <button class="btn-ghost btn-sm" onclick="copyPairs()">Copy</button></div>
+        <textarea id="copytext" readonly></textarea>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<datalist id="rosterList"></datalist>
+
+<script>
+const KEY="tftDuoRoster_v2";
+let roster=load();          // [{name,score,places:[]}]
+let lastTeams=null;         // [[a,b],...]
+let placeByName={};         // name -> "1".."8"  (per player)
+let roundApplied=false;
+
+const PTS=p=>9-p;           // 1st=8 ... 8th=1
+
+function load(){
+  let d=[]; try{ const j=JSON.parse(localStorage.getItem(KEY)); if(Array.isArray(j)) d=j; }catch(e){}
+  d.forEach(p=>{ if(!Array.isArray(p.places)) p.places=[]; if(typeof p.score!=="number") p.score=0; if(typeof p.games!=="number") p.games=0; });
+  return d;
+}
+function save(){ try{localStorage.setItem(KEY,JSON.stringify(roster));}catch(e){} }
+function findPlayer(n){ return roster.find(p=>p.name.toLowerCase()===n.toLowerCase()); }
+
+/* stats */
+function avgPlace(p){ return p.places.length ? p.places.reduce((a,b)=>a+b,0)/p.places.length : null; }
+function winRate(p){ return p.places.length ? p.places.filter(x=>x===1).length/p.places.length : null; }
+function fmtAvg(v){ return v==null?"—":v.toFixed(1); }
+function fmtWin(v){ return v==null?"—":Math.round(v*100)+"%"; }
+function ordinal(n){ return n+({1:"st",2:"nd",3:"rd"}[n]||"th"); }
+
+/* randomness */
+function secureRandomInt(max){const r=256-(256%max);const b=new Uint8Array(1);let v;do{crypto.getRandomValues(b);v=b[0];}while(v>=r);return v%max;}
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=secureRandomInt(i+1);[a[i],a[j]]=[a[j],a[i]];}return a;}
+
+/* slots */
+const slotsEl=document.getElementById("slots");
+for(let i=0;i<8;i++){
+  const d=document.createElement("div"); d.className="slot";
+  d.innerHTML=`<span class="n">${i+1}</span><input type="text" list="rosterList" maxlength="24" placeholder="Player ${i+1}">`;
+  d.querySelector("input").addEventListener("keydown",e=>{if(e.key==="Enter")randomize();});
+  slotsEl.appendChild(d);
+}
+function refreshDatalist(){ document.getElementById("rosterList").innerHTML=roster.map(p=>`<option value="${escAttr(p.name)}">`).join(""); }
+function getSlotPlayers(){ return [...slotsEl.querySelectorAll("input")].map(i=>i.value.trim()).filter(Boolean); }
+function setMsg(id,t,ok){const e=document.getElementById(id); e.textContent=t||""; e.className="msg"+(ok?" ok":"");}
+
+function randomize(){
+  const players=getSlotPlayers();
+  setMsg("msg",""); setMsg("msg2","");
+  if(players.length!==8){ setMsg("msg",`Need exactly 8 players (you have ${players.length}).`); return; }
+  if(new Set(players.map(p=>p.toLowerCase())).size!==8){ setMsg("msg","Duplicate names — each player must be unique."); return; }
+
+  let added=[];
+  players.forEach(n=>{ if(!findPlayer(n)){ roster.push({name:n,score:0,places:[],games:0}); added.push(n); } });
+  if(added.length){ save(); refreshDatalist(); renderStandings(); }
+
+  const s=shuffle([...players]);
+  lastTeams=[]; placeByName={}; roundApplied=false;
+  for(let t=0;t<4;t++) lastTeams.push([s[t*2],s[t*2+1]]);
+  renderTeams(true);
+  document.getElementById("applyRow").style.display="";
+  document.getElementById("applyBtn").disabled=false;
+  if(added.length) setMsg("msg",`Added to standings: ${added.join(", ")}`,true);
+}
+
+function playerStat(n){
+  const p=findPlayer(n); if(!p||!p.places.length) return `no games yet${p&&p.games?` · ${p.games} GP`:""}`;
+  return `avg ${fmtAvg(avgPlace(p))} · ${fmtWin(winRate(p))} 1st · ${p.games} GP`;
+}
+
+function placeRow(name){
+  const key=escAttr(name);
+  return `<div class="place-label">Place (1st–8th)</div>
+    <div class="pplace">${[1,2,3,4,5,6,7,8].map(p=>
+      `<button data-name="${key}" data-p="${p}" onclick="setPlace('${key}','${p}')">${p}</button>`).join("")}</div>`;
+}
+
+/* team points + auto result */
+function teamPoints(t){
+  const [a,b]=lastTeams[t];
+  const pa=placeByName[a], pb=placeByName[b];
+  const pts=(pa?PTS(+pa):0)+(pb?PTS(+pb):0);
+  return {pts, complete:!!(pa&&pb)};
+}
+function allPlaced(){ return Object.keys(placeByName).length===8; }
+function rankResults(){                 // -> {teamIndex:"gain"|"lose"} or null
+  if(!allPlaced()) return null;
+  const arr=lastTeams.map((tm,t)=>({t, total:teamPoints(t).pts, best:Math.min(+placeByName[tm[0]],+placeByName[tm[1]])}));
+  arr.sort((x,y)=>y.total-x.total || x.best-y.best || x.t-y.t);
+  const res={}; arr.forEach((o,i)=>res[o.t]=i<2?"gain":"lose"); return res;
+}
+
+function nameField(name,t,slot){
+  return `<input class="pn" list="rosterList" maxlength="24" value="${escAttr(name)}"
+     onchange="renamePlayer(${t},${slot},this.value)" onkeydown="if(event.key==='Enter')this.blur()">`;
+}
+function renamePlayer(t,slot,val){
+  if(roundApplied) return;
+  const newName=val.trim(), cur=t*2+slot, oldName=lastTeams[t][slot];
+  if(!newName || newName===oldName){ renderTeams(false); return; }
+  const others=lastTeams.flat().filter((_,i)=>i!==cur);
+  if(others.some(n=>n.toLowerCase()===newName.toLowerCase())){
+    alert("That player is already in this lobby."); renderTeams(false); return;
+  }
+  if(placeByName[oldName]!==undefined){ placeByName[newName]=placeByName[oldName]; delete placeByName[oldName]; }
+  lastTeams[t][slot]=newName;
+  renderTeams(false);
+}
+function renderTeams(animate){
+  const host=document.getElementById("teamHost");
+  host.innerHTML=
+    `
+    <div class="team-grid">${lastTeams.map(([a,b],t)=>`
+    <div class="team" style="${animate?`animation-delay:${t*0.06}s`:'animation:none;opacity:1;transform:none'}">
+      <h3>Team ${t+1}</h3>
+      <div class="pair">
+        <div class="pl">${nameField(a,t,0)}<div class="ps">${playerStat(a)}</div>${placeRow(a)}</div>
+        <div class="pl">${nameField(b,t,1)}<div class="ps">${playerStat(b)}</div>${placeRow(b)}</div>
+      </div>
+      <div class="team-foot" id="foot${t}"></div>
+    </div>`).join("")}</div>`;
+  paint(); buildCopy();
+  document.getElementById("copybox").classList.add("show");
+}
+
+function setPlace(name,p){
+  if(roundApplied)return;
+  if(placeByName[name]===p){ delete placeByName[name]; }
+  else{
+    for(const k in placeByName){ if(placeByName[k]===p) delete placeByName[k]; }
+    placeByName[name]=p;
+  }
+  paint(); buildCopy(); setMsg("msg2","");
+}
+function paint(){
+  const used=new Set(Object.values(placeByName));
+  document.querySelectorAll(".pplace button").forEach(b=>{
+    const name=b.dataset.name, p=b.dataset.p, mine=placeByName[name]===p;
+    b.classList.toggle("on", mine);
+    b.classList.toggle("taken", !mine && used.has(p));
+  });
+  const res=rankResults();
+  lastTeams.forEach((_,t)=>{
+    const foot=document.getElementById("foot"+t); if(!foot) return;
+    const {pts,complete}=teamPoints(t);
+    let badge;
+    if(res) badge=`<span class="badge ${res[t]}">${res[t]==="gain"?"Gain +1":"Lose -1"}</span>`;
+    else badge=`<span class="badge wait">${complete?"waiting":"set places"}</span>`;
+    foot.innerHTML=`<span class="tp">Team points <b>${pts}</b></span>${badge}`;
+  });
+}
+
+function applyResults(){
+  if(!lastTeams||roundApplied) return;
+  if(!allPlaced()){ setMsg("msg2","Set a place (1st–8th) for all 8 players first."); return; }
+  lastTeams.flat().forEach(n=>{ if(!findPlayer(n)) roster.push({name:n,score:0,places:[],games:0}); });
+  refreshDatalist();
+  const res=rankResults();
+  lastTeams.forEach(([a,b],t)=>{
+    const d=res[t]==="gain"?1:-1;
+    [a,b].forEach(n=>{
+      const p=findPlayer(n); if(!p) return;
+      p.score+=d;
+      p.places.push(parseInt(placeByName[n],10));
+      p.games+=1;
+    });
+  });
+  roundApplied=true;
+  document.getElementById("applyBtn").disabled=true;
+  save(); renderStandings(); buildCopy();
+  setMsg("msg2","Applied. Standings updated.",true);
+}
+
+/* standings */
+function renderStandings(){
+  const wrap=document.getElementById("standWrap");
+  if(!roster.length){
+    wrap.innerHTML=`<div class="empty-state"><p>No players yet</p><span>Use Import to load your roster.</span></div>`;
+    return;
+  }
+  const sorted=[...roster].sort((a,b)=>b.score-a.score||a.name.localeCompare(b.name));
+  wrap.innerHTML=`<table>
+    <thead><tr><th>#</th><th>Player</th><th class="r">Score</th><th class="r">Avg</th><th class="r">1st%</th><th class="r">GP</th><th></th></tr></thead>
+    <tbody>${sorted.map((p,i)=>{
+      const cls=p.score>0?"pos":p.score<0?"neg":"zero"; const sign=p.score>0?"+":"";
+      return `<tr class="${i===0?'top':''}">
+        <td class="rank">${i+1}</td>
+        <td class="nm">${escHtml(p.name)}</td>
+        <td class="sc ${cls}" onclick="editScore('${escAttr(p.name)}')">${sign}${p.score}</td>
+        <td class="stat">${fmtAvg(avgPlace(p))}</td>
+        <td class="stat">${fmtWin(winRate(p))}</td>
+        <td class="stat">${p.games}</td>
+        <td class="x"><button class="del" title="Remove" onclick="removePlayer('${escAttr(p.name)}')">&times;</button></td>
+      </tr>`;
+    }).join("")}</tbody></table>`;
+}
+function editScore(name){
+  const p=findPlayer(name); if(!p) return;
+  const v=prompt(`Score for ${name}:`, p.score); if(v===null) return;
+  const n=parseInt(v,10); if(isNaN(n)){ alert("Enter a whole number."); return; }
+  p.score=n; save(); renderStandings();
+}
+function removePlayer(name){
+  if(!confirm(`Remove ${name}?`)) return;
+  roster=roster.filter(p=>p.name!==name); save(); refreshDatalist(); renderStandings();
+}
+
+/* import */
+function toggleImport(){ document.getElementById("importPanel").classList.toggle("show"); }
+function doImport(replace){
+  const raw=document.getElementById("importText").value;
+  const tokens=raw.split(/[\s,]+/).filter(Boolean);
+  const parsed=[]; let cur=null;
+  tokens.forEach(tok=>{
+    if(/^[+-]?\d+$/.test(tok)&&cur){ cur.score=parseInt(tok,10); cur=null; }
+    else{ cur={name:tok,score:0,places:[],games:0}; parsed.push(cur); }
+  });
+  if(!parsed.length){ alert("Nothing to import."); return; }
+  if(replace){ roster=parsed; }
+  else{ parsed.forEach(np=>{ const ex=findPlayer(np.name); if(ex) ex.score=np.score; else roster.push(np); }); }
+  save(); refreshDatalist(); renderStandings();
+  document.getElementById("importText").value="";
+  document.getElementById("importPanel").classList.remove("show");
+}
+
+/* copy */
+function buildCopy(){
+  if(!lastTeams) return;
+  const stamp=new Date().toLocaleString();
+  const res=rankResults();
+  const lines=[`TFT Duo Lobby  -  ${stamp}`, "".padEnd(38,"-")];
+  lastTeams.forEach(([a,b],t)=>{
+    const pa=placeByName[a]?" "+ordinal(parseInt(placeByName[a],10)):"";
+    const pb=placeByName[b]?" "+ordinal(parseInt(placeByName[b],10)):"";
+    const {pts}=teamPoints(t);
+    const tag=res?(res[t]==="gain"?"+":"-"):"";
+    lines.push(`Team ${t+1}: ${a} + ${b} ${tag}`);
+  });
+  document.getElementById("copytext").value=lines.join("\n");
+}
+function copyPairs(){ buildCopy(); doCopy(document.getElementById("copytext").value, event.target); }
+function copyStandings(e){
+  if(!roster.length){ alert("Standings are empty."); return; }
+  const sorted=[...roster].sort((a,b)=>b.score-a.score||a.name.localeCompare(b.name));
+  const txt=sorted.map(p=>`${p.name} ${p.score}`).join("\n");
+  doCopy(txt, e&&e.target);
+}
+function doCopy(text,btn){
+  const old=btn?btn.textContent:"";
+  const done=()=>{ if(btn){btn.textContent="Copied"; setTimeout(()=>btn.textContent=old,1400);} };
+  navigator.clipboard.writeText(text).then(done).catch(()=>{
+    const ta=document.createElement("textarea"); ta.value=text; document.body.appendChild(ta);
+    ta.select(); document.execCommand("copy"); ta.remove(); done();
+  });
+}
+
+function clearRound(){
+  slotsEl.querySelectorAll("input").forEach(i=>i.value="");
+  document.getElementById("teamHost").innerHTML=`<div class="teams-empty">Randomize a lobby to generate 4 duos.</div>`;
+  document.getElementById("applyRow").style.display="none";
+  document.getElementById("copybox").classList.remove("show");
+  lastTeams=null; placeByName={}; roundApplied=false;
+  setMsg("msg",""); setMsg("msg2","");
+  slotsEl.querySelector("input").focus();
+}
+
+/* utils */
+function escHtml(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+function escAttr(s){return String(s).replace(/\\/g,"\\\\").replace(/'/g,"\\'").replace(/"/g,"&quot;");}
+
+refreshDatalist();
+renderStandings();
+</script>
+</body>
+</html>
