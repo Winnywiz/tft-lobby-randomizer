@@ -989,7 +989,7 @@ function playerRounds(name,rounds){
   return {seq, partners};
 }
 function trendSparkline(seq){
-  if(!seq.length) return `<div class="hint">No rounds yet.</div>`;
+  if(!seq.length) return `<div class="hint">-</div>`;
   const places=seq.map(s=>s.place);
   const n=places.length, w=600, h=160, L=28, R=14, T=16, B=20;
   const X=i=> n===1? (L+(w-L-R)/2) : L + i*(w-L-R)/(n-1);
