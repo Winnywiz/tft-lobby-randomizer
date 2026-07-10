@@ -509,9 +509,12 @@ function top4Rate(p){ return p.places.length ? p.places.filter(x=>x<=4).length/p
 const AVG_STOPS=[   // avg place: 1 = best (green) ... 8 = worst (red), ~4.2 yellow
   {v:1.0,c:[21,133,72]},{v:4.0,c:[90,142,38]},{v:4.2,c:[181,138,10]},
   {v:6.0,c:[213,105,26]},{v:8.0,c:[201,52,66]}];
-const RATE_STOPS=[  // rates: 50% yellow, >50 green, <50 orange->red
+const RATE_STOPS=[  // rates centered at 50% (used for Top4% and duo win rate)
   {v:0.0,c:[201,52,66]},{v:0.49,c:[213,105,26]},{v:0.50,c:[181,138,10]},
   {v:0.51,c:[90,142,38]},{v:1.0,c:[21,133,72]}];
+const WIN_STOPS=[   // 1st% scale: ~20% = yellow-green (good), higher = green (1st is rare)
+  {v:0.0,c:[201,52,66]},{v:0.10,c:[213,105,26]},{v:0.15,c:[181,138,10]},
+  {v:0.20,c:[90,142,38]},{v:0.32,c:[21,133,72]}];
 function gradColor(v,stops){
   if(v<=stops[0].v) return stops[0].c;
   if(v>=stops[stops.length-1].v) return stops[stops.length-1].c;
@@ -871,7 +874,7 @@ function renderStandings(){
   const body=rows.map((row,i)=>{
     const p=row.p, s=row.s, prov=isProv(s); if(prov) anyProv=true;
     const cls=p.score>0?"pos":p.score<0?"neg":"zero"; const sign=p.score>0?"+":"";
-    const extraTd=showExtra?`<td class="stat">${statOrPlain(s.win,fmtWin,RATE_STOPS,prov)}</td><td class="stat">${statOrPlain(s.top4,fmtWin,RATE_STOPS,prov)}</td>`:"";
+    const extraTd=showExtra?`<td class="stat">${statOrPlain(s.win,fmtWin,WIN_STOPS,prov)}</td><td class="stat">${statOrPlain(s.top4,fmtWin,RATE_STOPS,prov)}</td>`:"";
     return `<tr class="${i===0?'top':''}">
       <td class="rank">${i+1}</td>
       <td class="nm" onclick="openPlayer('${escAttr(p.name)}')" title="View stats">${escHtml(p.name)}${prov?'<span class="prov-star">*</span>':''}</td>
