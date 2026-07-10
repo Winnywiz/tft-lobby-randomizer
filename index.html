@@ -91,6 +91,7 @@
   th.r,td.sc,td.stat{text-align:right;}
   td.sc{width:52px; font-weight:700; font-variant-numeric:tabular-nums; cursor:pointer;}
   td.sc:hover{color:var(--accent);}
+  td.tot{text-align:right; width:52px; font-weight:700; font-variant-numeric:tabular-nums; opacity:.85;}
   td.stat{width:52px; color:var(--muted); font-variant-numeric:tabular-nums;}
   .heat{font-weight:700;}
   .pos{color:var(--gain);} .neg{color:var(--lose);} .zero{color:var(--muted);}
@@ -110,8 +111,12 @@
   .pick-chip:hover{border-color:#cfd5e0;}
   .pick-chip.on{background:var(--accent); color:#fff; border-color:var(--accent);}
 
-  /* standings mode toggle + provisional */
-  .stand-mode{display:inline-flex; border:1px solid var(--line); border-radius:8px; overflow:hidden; margin-bottom:12px;}
+  /* standings controls + provisional */
+  .stand-ctrls{display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:12px;}
+  .stats-toggle{background:#fff; border:1px solid var(--line); border-radius:8px; color:var(--muted);
+    font-size:12px; font-weight:600; padding:6px 12px; cursor:pointer;}
+  .stats-toggle:hover{color:var(--text); border-color:#cfd5e0;}
+  .stand-mode{display:inline-flex; border:1px solid var(--line); border-radius:8px; overflow:hidden;}
   .stand-mode button{border:none; background:#fff; color:var(--muted); font-size:12px; font-weight:600; padding:6px 13px; cursor:pointer;}
   .stand-mode button.on{background:var(--accent); color:#fff;}
   .stat-prov{color:var(--muted); opacity:.7; font-weight:700;}
@@ -136,8 +141,11 @@
   .team{border:1px solid var(--line); border-radius:12px; padding:14px; background:#fff;
     opacity:0; transform:translateY(8px); animation:rise .35s forwards;}
   @keyframes rise{to{opacity:1; transform:none;}}
-  .team h3{margin:0 0 10px; font-size:12px; font-weight:600; color:var(--muted);
+  .team-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;}
+  .team h3{margin:0; font-size:12px; font-weight:600; color:var(--muted);
     text-transform:uppercase; letter-spacing:.5px;}
+  .wr-badge{font-size:13px; font-weight:800; font-variant-numeric:tabular-nums;}
+  .wr-badge.na{color:var(--muted); opacity:.5;}
   .pair{display:flex; flex-direction:column; gap:10px; margin-bottom:12px;}
   .pl{background:var(--soft); border-radius:8px; padding:9px 11px;}
   .pl .pn{font-size:14.5px; font-weight:600;}
@@ -145,16 +153,18 @@
     border-radius:6px; outline:none; font-family:inherit; color:var(--text); margin:-2px -5px;}
   input.pn:hover{border-color:var(--line); background:#fff;}
   input.pn:focus{border-color:var(--accent); background:#fff;}
-  .pl .ps{font-size:11.5px; color:var(--muted); margin-top:4px;}
+  .pl .ps{font-size:11.5px; color:var(--muted); margin-top:6px;}
   .ps-line{display:block;}
   .ps-all{display:block; margin-top:2px; font-size:10.5px; color:var(--muted); opacity:.75;}
-  .place-label{font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; margin:8px 0 5px;}
-  .pplace{display:grid; grid-template-columns:repeat(8,1fr); gap:4px;}
-  .pplace button{padding:6px 0; border:1px solid var(--line); background:#fff; color:var(--muted);
-    font-size:12px; font-weight:650; border-radius:6px;}
-  .pplace button:hover:not(.taken){border-color:#cfd5e0;}
-  .pplace button.on{background:var(--accent); color:#fff; border-color:var(--accent);}
-  .pplace button.taken{opacity:.32; cursor:not-allowed;}
+  .pl-top{display:flex; align-items:center; gap:8px;}
+  .pl-top .pn{flex:1; margin:0;}
+  .rank-chip{flex:none; min-width:44px; padding:8px 8px; border:1px solid var(--line); background:#fff;
+    color:var(--muted); border-radius:8px; font-size:13px; font-weight:700; cursor:pointer; text-align:center;}
+  .rank-chip:hover{border-color:#cfd5e0;}
+  .rank-chip.on{background:var(--accent); color:#fff; border-color:var(--accent);}
+  .order-bar{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:14px; flex-wrap:wrap;}
+  .order-hint{font-size:12.5px; color:var(--muted); font-weight:600;}
+  .order-right{display:flex; align-items:center; gap:10px; font-size:12px; color:var(--muted);}
   .team-foot{margin-top:6px; padding-top:11px; border-top:1px solid var(--line);
     display:flex; align-items:center; justify-content:space-between; gap:8px;}
   .tp{font-size:12.5px; color:var(--muted);}
@@ -216,6 +226,9 @@
   .modal-stats{display:flex; flex-wrap:wrap; gap:10px 18px;}
   .modal-stats span{font-size:12.5px; color:var(--muted);}
   .modal-stats b{color:var(--text); font-size:14px; margin-left:3px;}
+  .modal-stats small{color:var(--muted); font-size:11px; margin-left:2px;}
+  .modal-stats b.tplus{color:var(--gain);}
+  .modal-stats b.tminus{color:var(--lose);}
   .modal-table{width:100%; border-collapse:collapse; font-size:14px;}
   .modal-table th{font-size:10.5px;}
   .modal-table td{padding:9px 6px;}
@@ -270,7 +283,7 @@
 <body>
 <div class="wrap">
   <div class="head">
-    <h1>Lobby Randomizer</h1>
+    <h1 onclick="toggleAdmin()" title="">Lobby Randomizer</h1>
     <button class="btn-ghost hist-open" onclick="openHistory()">Match history</button>
   </div>
 
@@ -279,8 +292,9 @@
     <!-- SECTION 1 -->
     <div class="card standings">
       <div class="card-head">
-        <h2><span class="step">1</span>Standings</span></h2>
-        <div style="display:flex; gap:8px;">
+        <h2><span class="step">1</span>Standings <span id="syncStatus" class="sync">Local</span></h2>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button class="btn-ghost btn-sm" id="statsToggleBtn" onclick="toggleExtra()">Detailed view</button>
           <button class="btn-ghost btn-sm" onclick="copyStandings(event)">Copy</button>
           <button class="btn-ghost btn-sm" onclick="toggleImport()">Import</button>
         </div>
@@ -301,8 +315,7 @@
       <div class="card-head">
         <h2><span class="step">2</span>Lobby randomizer</h2>
         <div class="head-btns">
-          <button class="btn-ghost btn-sm" onclick="togglePick()">Pick</button>
-          <button class="btn-ghost btn-sm" onclick="reuseLast()">Last</button>
+          <button class="btn-ghost btn-sm" onclick="togglePick()">Quick Select</button>
           <button class="btn-ghost btn-sm" onclick="clearRound()">Clear</button>
         </div>
       </div>
@@ -393,8 +406,18 @@ let roster=load();          // [{name,score,places:[],games}]
 let history=loadHistory();  // [{ts, teams:[{players:[a,b],places:[pa,pb],points,result}]}]
 let archives=loadArchives();// [{name, endedAt, rounds, standings:[{name,score,games,avg,win,top4}]}]
 let lastTeams=null;         // [[a,b],...]
-let placeByName={};         // name -> "1".."8"  (per player)
+let placeByName={};         // name -> "1".."8"  (derived from order)
+let order=[];               // names in finishing order (index 0 = 1st)
 let roundApplied=false;
+let showExtra=false; try{ showExtra=localStorage.getItem("tftShowExtra_v1")==="1"; }catch(e){}
+const ADMIN_CODE="winny";   // change this to your own passcode
+let adminMode=false; try{ adminMode=localStorage.getItem("tftAdmin_v1")==="1"; }catch(e){}
+function toggleAdmin(){
+  if(adminMode){ adminMode=false; try{localStorage.setItem("tftAdmin_v1","0");}catch(e){} if(lastTeams)renderTeams(false); alert("Private view off."); return; }
+  const c=prompt("Passcode:"); if(c===null) return;
+  if(c===ADMIN_CODE){ adminMode=true; try{localStorage.setItem("tftAdmin_v1","1");}catch(e){} if(lastTeams)renderTeams(false); alert("Private view on. Duo win-rate and Total +/- now visible."); }
+  else alert("Wrong passcode.");
+}
 
 const PTS=p=>9-p;           // 1st=8 ... 8th=1
 
@@ -407,11 +430,16 @@ function toArr(v){
   if(v && typeof v==="object") return Object.keys(v).sort((a,b)=>a-b).map(k=>v[k]).filter(x=>x!=null);
   return [];
 }
+const PT_THB=50;   // value per point (score) in THB
 function normalizePlayer(p){
-  if(!p||typeof p!=="object") return {name:String(p||""),score:0,places:[],games:0};
+  if(!p||typeof p!=="object") return {name:String(p||""),score:0,places:[],games:0,total:0};
   p.places=toArr(p.places).map(Number).filter(n=>!isNaN(n));
   if(typeof p.score!=="number") p.score=Number(p.score)||0;
   if(typeof p.games!=="number") p.games=Number(p.games)||0;
+  if(typeof p.total!=="number") p.total=Math.max(0,p.score);   // Total+ (lifetime wins)
+  p.total=Math.max(0,p.total);
+  if(typeof p.losses!=="number") p.losses=0;                   // Total- (lifetime losses)
+  p.losses=Math.max(0,p.losses);
   return p;
 }
 function normalizeRound(r){
@@ -560,13 +588,13 @@ function randomize(){
   if(new Set(players.map(p=>p.toLowerCase())).size!==8){ setMsg("msg","Each player must be unique."); return; }
 
   let added=[];
-  players.forEach(n=>{ if(!findPlayer(n)){ roster.push({name:n,score:0,places:[],games:0}); added.push(n); } });
+  players.forEach(n=>{ if(!findPlayer(n)){ roster.push({name:n,score:0,places:[],games:0,total:0,losses:0}); added.push(n); } });
   if(added.length){ save(); refreshDatalist(); renderStandings(); }
 
   lastLobby=[...players]; try{ localStorage.setItem(LKEY,JSON.stringify(lastLobby)); }catch(e){}
 
   const s=shuffle([...players]);
-  lastTeams=[]; placeByName={}; roundApplied=false;
+  lastTeams=[]; placeByName={}; order=[]; roundApplied=false;
   for(let t=0;t<4;t++) lastTeams.push([s[t*2],s[t*2+1]]);
   renderTeams(true);
   document.getElementById("applyRow").style.display="";
@@ -579,7 +607,40 @@ function statsFromRounds(name,rounds){
   const {seq}=playerRounds(name,rounds); const g=seq.length, pl=seq.map(s=>s.place);
   return {g, avg:g?pl.reduce((a,b)=>a+b,0)/g:null, win:g?pl.filter(x=>x===1).length/g:null, top4:g?pl.filter(x=>x<=4).length/g:null};
 }
-function statLine(g,avg,win,top4){ return g?`avg ${fmtAvg(avg)} · 1st ${fmtWin(win)} · top4 ${fmtWin(top4)} · ${g}g`:"no games"; }
+function statLine(g,avg,win,top4){ if(!g) return "no games"; return showExtra?`avg ${fmtAvg(avg)} · 1st ${fmtWin(win)} · top4 ${fmtWin(top4)} · ${g}g`:`avg ${fmtAvg(avg)} · ${g}g`; }
+
+/* admin scouting: predicted duo win-rate from avg place + top4 + duo synergy */
+function duoSynergy(a,b,rounds){
+  let g=0,w=0;
+  toArr(rounds).forEach(r=>toArr(r.teams).forEach(tm=>{
+    const pl=toArr(tm.players);
+    if(pl.length===2 && ((eqName(pl[0],a)&&eqName(pl[1],b))||(eqName(pl[0],b)&&eqName(pl[1],a)))){ g++; if(tm.result==="gain") w++; }
+  }));
+  return g?{g,rate:w/g}:null;
+}
+function predictWinrate(a,b){
+  const all=allTimeRounds();
+  const sa=statsFromRounds(a,all), sb=statsFromRounds(b,all);
+  const good=s=>s.avg==null?null:(8-s.avg)/7;          // place 1 ->1.0, place 8 ->0.0
+  const per=[{g:good(sa),t:sa.top4},{g:good(sb),t:sb.top4}].map(x=>{
+    const parts=[]; if(x.g!=null)parts.push(x.g); if(x.t!=null)parts.push(x.t);
+    return parts.length?parts.reduce((u,v)=>u+v,0)/parts.length:null;
+  }).filter(v=>v!=null);
+  const base=per.length?per.reduce((u,v)=>u+v,0)/per.length:null;
+  const duo=duoSynergy(a,b,all);
+  let wr;
+  if(base==null && !duo) return null;
+  if(base==null) wr=duo.rate;
+  else if(!duo) wr=base;
+  else wr=0.5*base+0.5*duo.rate;
+  return {wr, dg:duo?duo.g:0};
+}
+function winrateBadge(a,b){
+  const r=predictWinrate(a,b);
+  if(!r||r.wr==null) return `<span class="wr-badge na">-</span>`;
+  const c=gradColor(r.wr, RATE_STOPS);
+  return `<span class="wr-badge" style="color:rgb(${c[0]},${c[1]},${c[2]})" title="Predicted from avg place, top4 rate${r.dg?` and ${r.dg} duo game(s)`:''}">${Math.round(r.wr*100)}%</span>`;
+}
 function playerStat(n){
   const p=findPlayer(n);
   const season=p?statLine(p.games, avgPlace(p), winRate(p), top4Rate(p)):"no games";
@@ -588,11 +649,10 @@ function playerStat(n){
   return `<span class="ps-line">${season}</span><span class="ps-all">all-time · ${statLine(at.g,at.avg,at.win,at.top4)}</span>`;
 }
 
-function placeRow(name){
-  const key=escAttr(name);
-  return `<div class="place-label">Place</div>
-    <div class="pplace">${[1,2,3,4,5,6,7,8].map(p=>
-      `<button data-name="${key}" data-p="${p}" onclick="setPlace('${key}','${p}')">${p}</button>`).join("")}</div>`;
+function syncPlaces(){ placeByName={}; order.forEach((n,i)=>{ placeByName[n]=String(8-i); }); }   // 1st tap = 8th
+function rankChip(name){
+  const key=escAttr(name); const idx=order.indexOf(name); const placed=idx!==-1;
+  return `<button class="rank-chip ${placed?'on':''}" data-name="${key}" onclick="setPlaceOrder('${key}')">${placed?ordinal(8-idx):'-'}</button>`;
 }
 
 /* team points + auto result */
@@ -622,20 +682,24 @@ function renamePlayer(t,slot,val){
   if(others.some(n=>n.toLowerCase()===newName.toLowerCase())){
     alert("That player is already in this lobby."); renderTeams(false); return;
   }
-  if(placeByName[oldName]!==undefined){ placeByName[newName]=placeByName[oldName]; delete placeByName[oldName]; }
+  const oi=order.indexOf(oldName); if(oi!==-1) order[oi]=newName;
   lastTeams[t][slot]=newName;
+  syncPlaces();
   renderTeams(false);
 }
 function renderTeams(animate){
   const host=document.getElementById("teamHost");
   host.innerHTML=
-    `
+    `<div class="order-bar">
+      <span class="order-hint">Tap players from worst to best (8th &rarr; 1st)</span>
+      <span class="order-right"><button class="btn-ghost btn-sm" onclick="resetOrder()">Reset</button></span>
+    </div>
     <div class="team-grid">${lastTeams.map(([a,b],t)=>`
     <div class="team" style="${animate?`animation-delay:${t*0.06}s`:'animation:none;opacity:1;transform:none'}">
-      <h3>Team ${t+1}</h3>
+      <div class="team-head"><h3>Team ${t+1}</h3>${adminMode?winrateBadge(a,b):""}</div>
       <div class="pair">
-        <div class="pl">${nameField(a,t,0)}<div class="ps">${playerStat(a)}</div>${placeRow(a)}</div>
-        <div class="pl">${nameField(b,t,1)}<div class="ps">${playerStat(b)}</div>${placeRow(b)}</div>
+        <div class="pl"><div class="pl-top">${nameField(a,t,0)}${rankChip(a)}</div><div class="ps">${playerStat(a)}</div></div>
+        <div class="pl"><div class="pl-top">${nameField(b,t,1)}${rankChip(b)}</div><div class="ps">${playerStat(b)}</div></div>
       </div>
       <div class="team-foot" id="foot${t}"></div>
     </div>`).join("")}</div>`;
@@ -643,21 +707,19 @@ function renderTeams(animate){
   document.getElementById("copybox").classList.add("show");
 }
 
-function setPlace(name,p){
+function setPlaceOrder(name){
   if(roundApplied)return;
-  if(placeByName[name]===p){ delete placeByName[name]; }
-  else{
-    for(const k in placeByName){ if(placeByName[k]===p) delete placeByName[k]; }
-    placeByName[name]=p;
-  }
-  paint(); buildCopy(); setMsg("msg2","");
+  const i=order.indexOf(name);
+  if(i!==-1) order.splice(i,1);
+  else if(order.length<8) order.push(name);
+  syncPlaces(); paint(); buildCopy(); setMsg("msg2","");
 }
+function resetOrder(){ if(roundApplied)return; order=[]; syncPlaces(); paint(); buildCopy(); setMsg("msg2",""); }
 function paint(){
-  const used=new Set(Object.values(placeByName));
-  document.querySelectorAll(".pplace button").forEach(b=>{
-    const name=b.dataset.name, p=b.dataset.p, mine=placeByName[name]===p;
-    b.classList.toggle("on", mine);
-    b.classList.toggle("taken", !mine && used.has(p));
+  document.querySelectorAll(".rank-chip").forEach(b=>{
+    const name=b.dataset.name, idx=order.indexOf(name), placed=idx!==-1;
+    b.classList.toggle("on", placed);
+    b.textContent = placed?ordinal(8-idx):"-";
   });
   const res=rankResults();
   lastTeams.forEach((_,t)=>{
@@ -673,7 +735,7 @@ function paint(){
 function applyResults(){
   if(!lastTeams||roundApplied) return;
   if(!allPlaced()){ setMsg("msg2","Set a place for all 8 players first."); return; }
-  lastTeams.flat().forEach(n=>{ if(!findPlayer(n)) roster.push({name:n,score:0,places:[],games:0}); });
+  lastTeams.flat().forEach(n=>{ if(!findPlayer(n)) roster.push({name:n,score:0,places:[],games:0,total:0,losses:0}); });
   refreshDatalist();
   const res=rankResults();
   const record={ts:Date.now(), teams:[]};
@@ -681,7 +743,7 @@ function applyResults(){
     const d=res[t]==="gain"?1:-1;
     [a,b].forEach(n=>{
       const p=findPlayer(n); if(!p) return;
-      p.score+=d;
+      p.score+=d; if(d>0) p.total=(p.total||0)+1; else p.losses=(p.losses||0)+1;
       p.places.push(parseInt(placeByName[n],10));
       p.games+=1;
     });
@@ -708,7 +770,7 @@ function undoLastRound(){
     const d=tm.result==="gain"?1:-1;
     tm.players.forEach((n,i)=>{
       const p=findPlayer(n); if(!p) return;   // player may have been removed; skip
-      p.score-=d;
+      p.score-=d; if(d>0) p.total=Math.max(0,(p.total||0)-1); else p.losses=Math.max(0,(p.losses||0)-1);
       if(p.games>0) p.games-=1;
       // remove that round's placement (last matching entry)
       const idx=p.places.lastIndexOf(tm.places[i]);
@@ -743,13 +805,14 @@ function renderHistory(){
 let sortState={key:"score", dir:-1};
 let standMode="season";
 const PROV_MIN=5;
-const SORT_DEFAULT_DIR={name:1, score:-1, avg:1, win:-1, top4:-1, games:-1};
+const SORT_DEFAULT_DIR={name:1, score:-1, total:-1, avg:1, win:-1, top4:-1, games:-1};
 function rowStats(p, allR){
   if(standMode==="all"){ const at=statsFromRounds(p.name, allR); return {g:at.g, avg:at.avg, win:at.win, top4:at.top4}; }
   return {g:p.games, avg:avgPlace(p), win:winRate(p), top4:top4Rate(p)};
 }
 function rowVal(row,k){
   if(k==="score") return row.p.score;
+  if(k==="total") return row.p.total;
   if(k==="games") return row.s.g;
   if(k==="avg") return row.s.avg; if(k==="win") return row.s.win; if(k==="top4") return row.s.top4;
   return null;
@@ -762,6 +825,8 @@ function setSort(key){
   renderStandings();
 }
 function setStandMode(m){ standMode=m; renderStandings(); }
+function toggleExtra(){ showExtra=!showExtra; try{ localStorage.setItem("tftShowExtra_v1", showExtra?"1":"0"); }catch(e){} renderTeamsIfActive(); renderStandings(); }
+function renderTeamsIfActive(){ if(lastTeams) renderTeams(false); }
 function cmpRow(a,b){
   const k=sortState.key, dir=sortState.dir;
   if(k==="name") return dir*a.p.name.localeCompare(b.p.name);
@@ -790,33 +855,36 @@ function renderStandings(){
     wrap.innerHTML=`<div class="empty-state"><p>No players yet</p><span>Use Import to load your roster.</span></div>`;
     return;
   }
+  if(!showExtra && (sortState.key==="win"||sortState.key==="top4")){ sortState={key:"score", dir:-1}; }
   const allR=(standMode==="all")?allTimeRounds():null;
   const rows=roster.map(p=>({p, s:rowStats(p, allR)}));
   rows.sort(cmpRow);
   const th=(lbl,key,cls)=>`<th class="${cls||''} sortable ${sortState.key===key?'on':''}" onclick="setSort('${key}')">${lbl}${sortArrow(key)}</th>`;
-  const toggle=archives.length?`<div class="stand-mode">
+  const modeToggle=archives.length?`<div class="stand-mode">
       <button class="${standMode==="season"?'on':''}" onclick="setStandMode('season')">Season</button>
       <button class="${standMode==="all"?'on':''}" onclick="setStandMode('all')">All-time</button>
     </div>`:"";
+  const sbtn=document.getElementById("statsToggleBtn"); if(sbtn) sbtn.textContent=showExtra?"Simple view":"Detailed view";
+  const controls=modeToggle?`<div class="stand-ctrls">${modeToggle}</div>`:"";
+  const extraTh=showExtra?`${th("1st%","win","r")}${th("Top4%","top4","r")}`:"";
   let anyProv=false;
   const body=rows.map((row,i)=>{
     const p=row.p, s=row.s, prov=isProv(s); if(prov) anyProv=true;
     const cls=p.score>0?"pos":p.score<0?"neg":"zero"; const sign=p.score>0?"+":"";
+    const extraTd=showExtra?`<td class="stat">${statOrPlain(s.win,fmtWin,RATE_STOPS,prov)}</td><td class="stat">${statOrPlain(s.top4,fmtWin,RATE_STOPS,prov)}</td>`:"";
     return `<tr class="${i===0?'top':''}">
       <td class="rank">${i+1}</td>
-      <td class="nm" onclick="openPlayer('${escAttr(p.name)}')" title="View stats">${escHtml(p.name)}${prov?'<span class="prov-star"></span>':''}</td>
+      <td class="nm" onclick="openPlayer('${escAttr(p.name)}')" title="View stats">${escHtml(p.name)}${prov?'<span class="prov-star">*</span>':''}</td>
       <td class="sc ${cls}" onclick="editScore('${escAttr(p.name)}')">${sign}${p.score}</td>
       <td class="stat">${statOrPlain(s.avg,fmtAvg,AVG_STOPS,prov)}</td>
-      <td class="stat">${statOrPlain(s.win,fmtWin,RATE_STOPS,prov)}</td>
-      <td class="stat">${statOrPlain(s.top4,fmtWin,RATE_STOPS,prov)}</td>
+      ${extraTd}
       <td class="stat">${s.g}</td>
       <td class="x"><button class="del" title="Remove" onclick="removePlayer('${escAttr(p.name)}')">&times;</button></td>
     </tr>`;
   }).join("");
-  const legend=anyProv?``:"";
-  wrap.innerHTML=`${toggle}<table>
-    <thead><tr><th>#</th>${th("Player","name")}${th("Score","score","r")}${th("Avg","avg","r")}${th("1st%","win","r")}${th("Top4%","top4","r")}${th("GP","games","r")}<th></th></tr></thead>
-    <tbody>${body}</tbody></table>${legend}`;
+  wrap.innerHTML=`${controls}<table>
+    <thead><tr><th>#</th>${th("Player","name")}${th("Score","score","r")}${th("Avg","avg","r")}${extraTh}${th("GP","games","r")}<th></th></tr></thead>
+    <tbody>${body}</tbody></table>`;
 }
 function editScore(name){
   const p=findPlayer(name); if(!p) return;
@@ -832,7 +900,7 @@ function removePlayer(name){
 /* seasons */
 function snapshotStandings(){
   return [...roster].sort((a,b)=>b.score-a.score||a.name.localeCompare(b.name)).map(p=>({
-    name:p.name, score:p.score, games:p.games, avg:avgPlace(p), win:winRate(p), top4:top4Rate(p)
+    name:p.name, score:p.score, total:p.total, losses:p.losses, games:p.games, avg:avgPlace(p), win:winRate(p), top4:top4Rate(p)
   }));
 }
 function newSeason(){
@@ -902,7 +970,7 @@ function removeSeason(idx){
 function openArchivePlayer(idx,name){
   const a=archives[idx]; if(!a) return;
   const snap=(a.standings||[]).find(p=>p.name&&p.name.toLowerCase()===name.toLowerCase());
-  const scoreLine=snap?`<span>Score <b>${snap.score>0?'+':''}${snap.score}</b></span>`:"";
+  const scoreLine=snap?totalLine(snap.total,snap.losses):"";
   showPlayerDetail(name, toArr(a.log), scoreLine, escHtml(a.name)+" · "+escHtml(name), ()=>openArchive(idx));
 }
 
@@ -945,15 +1013,17 @@ function trendSparkline(seq){
 let modalBack=null;
 function doBack(){ const f=modalBack; if(f) f(); }
 function showPlayerDetail(name,rounds,scoreLineHtml,title,backFn,overallRounds){
-  const {seq,partners}=playerRounds(name,rounds);
+  const {seq}=playerRounds(name,rounds);   // season, for the season stat block
   const g=seq.length, places=seq.map(s=>s.place);
   const avg=g?places.reduce((a,b)=>a+b,0)/g:null;
   const win=g?places.filter(x=>x===1).length/g:null;
   const t4=g?places.filter(x=>x<=4).length/g:null;
-  const best=g?Math.min(...places):null, worst=g?Math.max(...places):null;
   let streak="";
   if(g){ const last=seq[seq.length-1].result; let c=0; for(let i=seq.length-1;i>=0&&seq[i].result===last;i--) c++; streak=(last==="gain"?"W":"L")+c; }
   const hasOverall=!!overallRounds;
+  const detailRounds=hasOverall?overallRounds:rounds;       // all-time (or season if none)
+  const detail=playerRounds(name,detailRounds);
+  const seqTrend=detail.seq.slice(-10);                     // trend: last 10 games max
   const seasonHead=hasOverall?`<div class="modal-sub">This season</div>`:"";
   const stats=`${seasonHead}<div class="modal-stats">${hasOverall?"":(scoreLineHtml||"")}
     <span>GP <b>${g}</b></span><span>Avg <b>${avg==null?'-':avg.toFixed(1)}</b></span>
@@ -968,18 +1038,23 @@ function showPlayerDetail(name,rounds,scoreLineHtml,title,backFn,overallRounds){
       <span>1st <b>${at.win==null?'-':Math.round(at.win*100)+'%'}</b></span>
       <span>Top4 <b>${at.top4==null?'-':Math.round(at.top4*100)+'%'}</b></span></div>`;
   }
-  const parts=Object.entries(partners).sort((a,b)=>b[1].games-a[1].games);
+  const parts=Object.entries(detail.partners).sort((a,b)=>b[1].games-a[1].games);   // all-time synergy
   const synergy=parts.length
     ? `<table class="modal-table"><thead><tr><th>Partner</th><th class="r">Together</th><th class="r">Wins</th><th class="r">Win%</th></tr></thead><tbody>${
         parts.map(([pn,s])=>`<tr><td class="nm">${escHtml(pn)}</td><td class="stat">${s.games}</td><td class="stat">${s.wins}</td><td class="stat">${statCell(s.wins/s.games,fmtWin,RATE_STOPS)}</td></tr>`).join("")}</tbody></table>`
     : `<div class="hint">No duo rounds recorded.</div>`;
   modalBack=backFn||null;
   const back=backFn?`<button class="btn-ghost btn-sm" style="margin-bottom:14px" onclick="doBack()">&lsaquo; Back</button>`:"";
-  showModal(title||escHtml(name), back+stats+overall+`<div class="modal-sub">Placement trend (season)</div>${trendSparkline(seq)}<div class="modal-sub">Duo partners (season)</div>${synergy}`);
+  const scope=hasOverall?"all-time":"season";
+  showModal(title||escHtml(name), back+stats+overall+`<div class="modal-sub">Placement trend (last ${Math.min(10,detail.seq.length)||10} games)</div>${trendSparkline(seqTrend)}<div class="modal-sub">Duo partners (${scope})</div>${synergy}`);
+}
+function totalLine(tot,los){
+  if(!adminMode) return "";
+  return `<span>Total <b class="tplus">+${Math.max(0,tot||0)}</b></span><span>Total <b class="tminus">-${Math.max(0,los||0)}</b></span>`;
 }
 function openPlayer(name){
   const p=findPlayer(name);
-  const scoreLine=p?`<span>Score <b>${p.score>0?'+':''}${p.score}</b></span>`:"";
+  const scoreLine=p?totalLine(p.total,p.losses):"";
   showPlayerDetail(name, history, scoreLine, escHtml(name), null, archives.length?allTimeRounds():null);
 }
 
@@ -1000,12 +1075,12 @@ function doImport(replace){
   const tokens=raw.split(/[\s,]+/).filter(Boolean);
   const parsed=[]; let cur=null;
   tokens.forEach(tok=>{
-    if(/^[+-]?\d+$/.test(tok)&&cur){ cur.score=parseInt(tok,10); cur=null; }
-    else{ cur={name:tok,score:0,places:[],games:0}; parsed.push(cur); }
+    if(/^[+-]?\d+$/.test(tok)&&cur){ cur.score=parseInt(tok,10); cur.total=Math.max(0,cur.score); cur=null; }
+    else{ cur={name:tok,score:0,places:[],games:0,total:0,losses:0}; parsed.push(cur); }
   });
   if(!parsed.length){ alert("Nothing to import."); return; }
   if(replace){ roster=parsed; }
-  else{ parsed.forEach(np=>{ const ex=findPlayer(np.name); if(ex) ex.score=np.score; else roster.push(np); }); }
+  else{ parsed.forEach(np=>{ const ex=findPlayer(np.name); if(ex){ ex.score=np.score; ex.total=Math.max(0,np.score); } else roster.push(np); }); }
   save(); refreshDatalist(); renderStandings();
   document.getElementById("importText").value="";
   document.getElementById("importPanel").classList.remove("show");
@@ -1047,7 +1122,7 @@ function clearRound(){
   document.getElementById("teamHost").innerHTML=`<div class="teams-empty">Randomize a lobby to generate 4 duos.</div>`;
   document.getElementById("applyRow").style.display="none";
   document.getElementById("copybox").classList.remove("show");
-  lastTeams=null; placeByName={}; roundApplied=false;
+  lastTeams=null; placeByName={}; order=[]; roundApplied=false;
   setMsg("msg",""); setMsg("msg2","");
   slotsEl.querySelector("input").focus();
 }
