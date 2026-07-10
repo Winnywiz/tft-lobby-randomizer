@@ -1075,12 +1075,19 @@ function doImport(replace){
   const tokens=raw.split(/[\s,]+/).filter(Boolean);
   const parsed=[]; let cur=null;
   tokens.forEach(tok=>{
-    if(/^[+-]?\d+$/.test(tok)&&cur){ cur.score=parseInt(tok,10); cur.total=Math.max(0,cur.score); cur=null; }
-    else{ cur={name:tok,score:0,places:[],games:0,total:0,losses:0}; parsed.push(cur); }
+    if(/^[+-]?\d+$/.test(tok)&&cur){ cur.score=parseInt(tok,10); cur=null; }
+    else{ cur={name:tok,score:0}; parsed.push(cur); }
   });
   if(!parsed.length){ alert("Nothing to import."); return; }
-  if(replace){ roster=parsed; }
-  else{ parsed.forEach(np=>{ const ex=findPlayer(np.name); if(ex){ ex.score=np.score; ex.total=Math.max(0,np.score); } else roster.push(np); }); }
+  // Import only updates the score/balance. Existing players keep GP, placements,
+  // wins/losses (Total +/-) and match history for the current season.
+  function build(np){
+    const ex=findPlayer(np.name);
+    if(ex){ ex.score=np.score; return ex; }   // keep all stats, only update balance
+    return {name:np.name, score:np.score, places:[], games:0, total:Math.max(0,np.score), losses:0};
+  }
+  if(replace){ roster=parsed.map(build); }
+  else{ parsed.forEach(np=>{ const ex=findPlayer(np.name); if(ex) ex.score=np.score; else roster.push(build(np)); }); }
   save(); refreshDatalist(); renderStandings();
   document.getElementById("importText").value="";
   document.getElementById("importPanel").classList.remove("show");
