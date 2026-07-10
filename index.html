@@ -292,7 +292,7 @@
     <!-- SECTION 1 -->
     <div class="card standings">
       <div class="card-head">
-        <h2><span class="step">1</span>Standings <span id="syncStatus" class="sync">Local</span></h2>
+        <h2><span class="step">1</span>Standings</span></h2>
         <div style="display:flex; gap:8px; flex-wrap:wrap;">
           <button class="btn-ghost btn-sm" id="statsToggleBtn" onclick="toggleExtra()">Detailed view</button>
           <button class="btn-ghost btn-sm" onclick="copyStandings(event)">Copy</button>
@@ -413,10 +413,10 @@ let showExtra=false; try{ showExtra=localStorage.getItem("tftShowExtra_v1")==="1
 const ADMIN_CODE="winny";   // change this to your own passcode
 let adminMode=false; try{ adminMode=localStorage.getItem("tftAdmin_v1")==="1"; }catch(e){}
 function toggleAdmin(){
-  if(adminMode){ adminMode=false; try{localStorage.setItem("tftAdmin_v1","0");}catch(e){} if(lastTeams)renderTeams(false); alert("Private view off."); return; }
-  const c=prompt("Passcode:"); if(c===null) return;
-  if(c===ADMIN_CODE){ adminMode=true; try{localStorage.setItem("tftAdmin_v1","1");}catch(e){} if(lastTeams)renderTeams(false); alert("Private view on. Duo win-rate and Total +/- now visible."); }
-  else alert("Wrong passcode.");
+  if(adminMode){ adminMode=false; try{localStorage.setItem("tftAdmin_v1","0");}catch(e){} if(lastTeams)renderTeams(false); alert("Detailed view OFF."); return; }
+  const c=prompt("Seed:"); if(c===null) return;
+  if(c===ADMIN_CODE){ adminMode=true; try{localStorage.setItem("tftAdmin_v1","1");}catch(e){} if(lastTeams)renderTeams(false); alert("Detailed view ON"); }
+  else alert("Invalid Seed.");
 }
 
 const PTS=p=>9-p;           // 1st=8 ... 8th=1
@@ -787,7 +787,7 @@ function renderHistory(){
   const undo=document.getElementById("undoBtn");
   if(undo) undo.disabled=!history.length;
   if(!host) return;
-  if(!history.length){ host.innerHTML=`<div class="hist-empty">No rounds yet.</div>`; return; }
+  if(!history.length){ host.innerHTML=`<div class="hist-empty">-</div>`; return; }
   const rows=[...history].reverse().slice(0,30);
   host.innerHTML=`<div class="hist-list">${rows.map((r,ri)=>{
     const when=fmtTime(r.ts);
@@ -1042,7 +1042,7 @@ function showPlayerDetail(name,rounds,scoreLineHtml,title,backFn,overallRounds){
   const synergy=parts.length
     ? `<table class="modal-table"><thead><tr><th>Partner</th><th class="r">Together</th><th class="r">Wins</th><th class="r">Win%</th></tr></thead><tbody>${
         parts.map(([pn,s])=>`<tr><td class="nm">${escHtml(pn)}</td><td class="stat">${s.games}</td><td class="stat">${s.wins}</td><td class="stat">${statCell(s.wins/s.games,fmtWin,RATE_STOPS)}</td></tr>`).join("")}</tbody></table>`
-    : `<div class="hint">No duo rounds recorded.</div>`;
+    : `<div class="hint">-</div>`;
   modalBack=backFn||null;
   const back=backFn?`<button class="btn-ghost btn-sm" style="margin-bottom:14px" onclick="doBack()">&lsaquo; Back</button>`:"";
   const scope=hasOverall?"all-time":"season";
