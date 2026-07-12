@@ -541,6 +541,19 @@ function fmtTime(ts){ const d=new Date(ts); return d.toLocaleString()+" ("+gmtLa
 /* randomness */
 function secureRandomInt(max){const r=256-(256%max);const b=new Uint8Array(1);let v;do{crypto.getRandomValues(b);v=b[0];}while(v>=r);return v%max;}
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=secureRandomInt(i+1);[a[i],a[j]]=[a[j],a[i]];}return a;}
+function pairKey(a,b){ return [String(a).toLowerCase(),String(b).toLowerCase()].sort().join("|"); }
+function generateTeams(players, avoid){   // reshuffle until no duo repeats last round's pairs
+  let best=null, bestRepeats=99;
+  for(let attempt=0; attempt<400; attempt++){
+    const s=shuffle([...players]); const pairs=[];
+    for(let t=0;t<4;t++) pairs.push([s[t*2],s[t*2+1]]);
+    let repeats=0;
+    if(avoid && avoid.size){ for(const [a,b] of pairs){ if(avoid.has(pairKey(a,b))) repeats++; } }
+    if(repeats===0) return pairs;
+    if(repeats<bestRepeats){ bestRepeats=repeats; best=pairs; }
+  }
+  return best;   // fallback: fewest repeats found (rare)
+}
 
 /* slots */
 const slotsEl=document.getElementById("slots");
@@ -596,9 +609,10 @@ function randomize(){
 
   lastLobby=[...players]; try{ localStorage.setItem(LKEY,JSON.stringify(lastLobby)); }catch(e){}
 
-  const s=shuffle([...players]);
-  lastTeams=[]; placeByName={}; order=[]; roundApplied=false;
-  for(let t=0;t<4;t++) lastTeams.push([s[t*2],s[t*2+1]]);
+  const prev=new Set();                                  // avoid repeating last round's duos
+  if(lastTeams) lastTeams.forEach(([a,b])=>prev.add(pairKey(a,b)));
+  lastTeams=generateTeams(players, prev);
+  placeByName={}; order=[]; roundApplied=false;
   renderTeams(true);
   document.getElementById("applyRow").style.display="";
   document.getElementById("applyBtn").disabled=false;
@@ -1098,7 +1112,7 @@ function doImport(replace){
 
 /* copy */
 function buildCopy(){
-  if(!lastTeams) return;  
+  if(!lastTeams) return;
   const stamp=fmtTime(Date.now());
   const res=rankResults();
   const lines=[`888 Lobby  -  ${stamp}`, "".padEnd(38,"-")];
