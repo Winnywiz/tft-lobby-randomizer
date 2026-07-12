@@ -1098,10 +1098,10 @@ function doImport(replace){
 
 /* copy */
 function buildCopy(){
-  if(!lastTeams) return;
+  if(!lastTeams) return;  
   const stamp=fmtTime(Date.now());
   const res=rankResults();
-  const lines=[`TFT Duo Lobby  -  ${stamp}`, "".padEnd(38,"-")];
+  const lines=[`888 Lobby  -  ${stamp}`, "".padEnd(38,"-")];
   lastTeams.forEach(([a,b],t)=>{
     const pa=placeByName[a]?" "+ordinal(parseInt(placeByName[a],10)):"";
     const pb=placeByName[b]?" "+ordinal(parseInt(placeByName[b],10)):"";
